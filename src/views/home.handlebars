@@ -1,0 +1,59 @@
+{{!< main}}
+<h1>Lista de productos</h1>
+<ul id="product-list">
+  {{#each products}}
+    <li>
+      {{this.name}} - {{this.price}}
+      <button onclick="deleteProduct('{{this.id}}')">Eliminar</button>
+    </li>
+  {{/each}}
+</ul>
+
+<h2>Agregar nuevo producto</h2>
+<form id="product-form">
+  <label for="name">Nombre:</label>
+  <input type="text" id="name" name="name" required>
+  <label for="price">Precio:</label>
+  <input type="number" id="price" name="price" required>
+  <button type="submit">Agregar</button>
+</form>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const socket = io();
+
+    socket.on('updateProducts', (products) => {
+      const productList = document.getElementById('product-list');
+      productList.innerHTML = '';
+      products.forEach(product => {
+        const li = document.createElement('li');
+        li.innerHTML = `${product.name} - ${product.price} <button onclick="deleteProduct('${product.id}')">Eliminar</button>`;
+        productList.appendChild(li);
+      });
+    });
+
+    document.getElementById('product-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = document.getElementById('name').value;
+      const price = document.getElementById('price').value;
+
+      fetch('/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: Date.now().toString(), name, price })
+      }).then(() => {
+        document.getElementById('name').value = '';
+        document.getElementById('price').value = '';
+      });
+    });
+  });
+
+  function deleteProduct(id) {
+    fetch(`/products/${id}`, {
+      method: 'DELETE'
+    });
+  }
+</script>
